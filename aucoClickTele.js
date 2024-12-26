@@ -11,6 +11,8 @@
 // @grant        unsafeWindow
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
 // @require      https://cdn.jsdelivr.net/npm/sweetalert2@11
+// @downloadURL https://update.greasyfork.org/scripts/521869/Auto%20Cick%20miniapp%20telegram%20Devhoanglv92.user.js
+// @updateURL https://update.greasyfork.org/scripts/521869/Auto%20Cick%20miniapp%20telegram%20Devhoanglv92.meta.js
 // ==/UserScript==
 
 (function() {
@@ -290,4 +292,5 @@ const observer = new MutationObserver(() => {
   checkAndStart();
 });
 observer.observe(document.body, { childList: true, subtree: true });
+
 })();
