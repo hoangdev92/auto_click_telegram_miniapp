@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Auto Cick miniapp telegram Devhoanglv92
 // @namespace    http://tampermonkey.net/
-// @version      2024-12-26
+// @version      2024-12-27
 // @description  Hỗ trợ autoclick vào vùng giữa màn hình, vì nhiều miniapp khác nhau nhưng vùng nhấn là ở giữa nên tạm thời chỉ hỗ trợ ở giữa màn hình
 // @author       devhoanglv92
 // @match        *://www.kucoin.com/*
@@ -26,7 +26,7 @@ function createPopup() {
   const popup = document.createElement('div');
   popup.id = 'autoclicker-popup';
 popup.innerHTML = `
-<div style="
+<div id="popup-container" style="
 position: fixed;
 bottom: 10px;
 right: 10px;
@@ -41,57 +41,65 @@ box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.5);
 width: 120px;
 font-family: Arial, sans-serif;
 ">
-<p style="
-  margin: 0 0 10px 0;
-  font-weight: bold;
-  font-size: 10px;
-">
-  AUTO CLICK BY DEVHOANGLV92
-</p>
-<button id="toggle-autoclicker" style="
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  padding: 8px 8px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 8px;
-  font-weight: bold;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
-  transition: background-color 0.3s;
-  width: 100%;
-">Bật Autoclick</button>
-<button id="settings-button" style="
-  background-color: #2196F3;
-  color: white;
-  border: none;
-  padding: 8px 8px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 8px;
-  font-weight: bold;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
-  margin-top: 8px;
-  transition: background-color 0.3s;
-  width: 100%;
-">Cài đặt</button>
-<div id="settings-panel" style="display: none; margin-top: 10px;">
-  <label for="click-speed" style="
-    font-size: 8px;
-    display: block;
-    margin-bottom: 5px;
-  ">
-    Tốc độ Tap: <span id="click-speed-value">${clickSpeed}</span> ms
-  </label>
-  <input type="range" id="click-speed" min="20" max="1000" step="10" value="${clickSpeed}" style="
-    width: 20px;
-    height: 100px;
-    -webkit-appearance: slider-vertical;
-    writing-mode: bt-lr;
-    margin: 0 auto;
-    padding: 0;
-  ">
-</div>
+  <button id="resize-button" style="
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0 5px;
+  ">⛶</button>
+  <div id="main-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <p style="margin: 0; font-weight: bold; font-size: 10px;">
+        AUTO CLICK BY DEVHOANGLV92
+      </p>
+    </div>
+    <button id="toggle-autoclicker" style="
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 8px;
+      font-weight: bold;
+      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
+      transition: background-color 0.3s;
+      width: 100%;
+    ">Bật Autoclick</button>
+    <button id="settings-button" style="
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      padding: 8px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 8px;
+      font-weight: bold;
+      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
+      margin-top: 8px;
+      transition: background-color 0.3s;
+      width: 100%;
+    ">Cài đặt</button>
+    <div id="settings-panel" style="display: none; margin-top: 10px;">
+      <label for="click-speed" style="
+        font-size: 8px;
+        display: block;
+        margin-bottom: 5px;
+      ">
+        Tốc độ Tap: <span id="click-speed-value">${clickSpeed}</span> ms
+      </label>
+      <input type="range" id="click-speed" min="20" max="1000" step="10" value="${clickSpeed}" style="
+        width: 20px;
+        height: 100px;
+        -webkit-appearance: slider-vertical;
+        writing-mode: bt-lr;
+        margin: 0 auto;
+        padding: 0;
+      ">
+    </div>
+  </div>
 </div>
 `;
 
@@ -102,6 +110,26 @@ const speedSlider = document.getElementById('click-speed');
 const speedValue = document.getElementById('click-speed-value');
 const settingsButton = document.getElementById('settings-button');
 const settingsPanel = document.getElementById('settings-panel');
+
+const popupContainer = document.getElementById('popup-container');
+const resizeButton = document.getElementById('resize-button');
+let isExpanded = false;
+
+resizeButton.addEventListener('click', () => {
+  const mainContent = document.getElementById('main-content');
+  if (isExpanded) {
+    popupContainer.style.width = '120px';
+    popupContainer.style.padding = '10px';
+    mainContent.style.display = 'block';
+    resizeButton.innerHTML = '⛶';
+  } else {
+    popupContainer.style.width = '30px';
+    popupContainer.style.padding = '5px';
+    mainContent.style.display = 'none';
+    resizeButton.innerHTML = '⧉';
+  }
+  isExpanded = !isExpanded;
+});
 
 toggleButton.addEventListener('click', function() {
   isAutoClickerEnabled = !isAutoClickerEnabled;
