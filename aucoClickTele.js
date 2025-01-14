@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         Auto Cick miniapp telegram Devhoanglv92
 // @namespace    http://tampermonkey.net/
-// @version      2025-1-14
+// @version      2025-1-14.1
 // @description  Hỗ trợ autoclick telegram miniapp, kucoin, babydogeclikerbot, pepememe
 // @author       devhoanglv92
 // @match        *://www.kucoin.com/*
 // @match        *://babydogeclikerbot.com/*
 // @match        *://game.raccooncoonbot.xyz/*
+// @match        *://app.hipogang.io/*
 // @icon         https://i.postimg.cc/brxR6L7c/128.png
 // @grant        GM_log
 // @grant        unsafeWindow
@@ -185,28 +186,51 @@ function detectInputSupport() {
     mouse: false
   };
 
-  const listTouch = ['babydogeclikerbot.com', 'raccooncoonbot.xyz'];
+  const listTouch = ['babydogeclikerbot.com'];
   // Check touch support
   support.touch = listTouch.filter((x) => window.location.host.includes(x)).length > 0;
 
   // Check pointer support
-  const listPointer = ['kucoin.com', 'raccooncoonbot.xyz'];
+  const listPointer = ['kucoin.com', 'raccooncoonbot.xyz', 'app.hipogang.io'];
   support.pointer = listPointer.filter((e) => window.location.host.includes(e)).length > 0;
 
   // Check mouse support
   support.mouse = 'onmousedown' in window;
 
-  console.log('Input support:', support);
   return support;
 }
 
 function simulateClick(element) {
   const rect = element.getBoundingClientRect();
-  const x = getRandomInt(rect.left, rect.right);
-  const y = getRandomInt(rect.top, rect.bottom);
+  let x, y;
+  if (window.location.host.includes('raccooncoonbot.xyz')) {
+    x = getRandomInt(rect.left - 10, rect.right - 10);
+    y = getRandomInt(rect.top, rect.bottom - 30)
+  } else {
+    x = getRandomInt(rect.left, rect.right);
+    y = getRandomInt(rect.top, rect.bottom);
+  }
   const support = detectInputSupport();
+
+  // 1. Pointer Events (most modern)
+  if (support.pointer) {
+    const pointerEvents = ['pointerdown', 'pointerup', 'pointerover', 'pointerenter'];
+    pointerEvents.forEach(eventType => {
+      const pointerEvent = new PointerEvent(eventType, {
+        view: unsafeWindow,
+        bubbles: true,
+        cancelable: true,
+        clientX: x,
+        clientY: y,
+        pointerId: 1,
+        pressure: 0.5,
+      });
+      element.dispatchEvent(pointerEvent);
+    });
+  }
+
+  // 2. Touch Events
   if (support.touch) {
-    // Create touch event
     const touchObj = new Touch({
       identifier: Date.now(),
       target: element,
@@ -214,69 +238,49 @@ function simulateClick(element) {
       clientY: y,
       pageX: x,
       pageY: y,
-      radiusX: getRandomInt(2, 5),
-      radiusY: getRandomInt(2, 5),
-      force: Math.random() * 0.5 + 0.5
+      radiusX: 2.5,
+      radiusY: 2.5,
+      force: 0.5,
     });
 
-    element.dispatchEvent(new TouchEvent('touchstart', {
-      bubbles: true,
-      cancelable: true,
-      view: unsafeWindow,
-      touches: [touchObj],
-      targetTouches: [touchObj],
-      changedTouches: [touchObj]
-    }));
-
-    setTimeout(() => {
-      element.dispatchEvent(new TouchEvent('touchend', {
+    ['touchstart', 'touchend'].forEach(eventType => {
+      element.dispatchEvent(new TouchEvent(eventType, {
         bubbles: true,
         cancelable: true,
         view: unsafeWindow,
-        touches: [],
-        targetTouches: [],
+        touches: [touchObj],
+        targetTouches: [touchObj],
         changedTouches: [touchObj]
       }));
-    }, 50);
+    });
   }
+
+  // 3. Mouse Events
   if (support.mouse) {
-    try {
-        // Mouse down event
-        const mousedownEvent = new MouseEvent('mousedown', {
-            view: unsafeWindow,
-            bubbles: true,
-            cancelable: true,
-            clientX: x,
-            clientY: y
-        });
-        element.dispatchEvent(mousedownEvent);
+    const mouseEvents = ['mousedown', 'mouseup', 'click'];
+    mouseEvents.forEach(eventType => {
+      const mouseEvent = new MouseEvent(eventType, {
+        view: unsafeWindow,
+        bubbles: true,
+        cancelable: true,
+        clientX: x,
+        clientY: y,
+        button: 0,
+        buttons: 1,
+      });
+      element.dispatchEvent(mouseEvent);
+    });
+  }
 
-        // Simulate hold time (50-150ms)
-        setTimeout(() => {
-            // Mouse up event
-            const mouseupEvent = new MouseEvent('mouseup', {
-                view: unsafeWindow,
-                bubbles: true,
-                cancelable: true,
-                clientX: x,
-                clientY: y
-            });
-            element.dispatchEvent(mouseupEvent);
-
-            // Click event
-            const clickEvent = new MouseEvent('click', {
-                view: unsafeWindow,
-                bubbles: true,
-                cancelable: true,
-                clientX: x,
-                clientY: y
-            });
-            element.dispatchEvent(clickEvent);
-        }, Math.random() * 100 + 50); // Random delay between 50-150ms
-    } catch (error) {
-        console.error('Failed to create mouse events:', error);
-    }
-}
+  // 4. Focus Events
+  ['focus', 'focusin'].forEach(eventType => {
+    const focusEvent = new FocusEvent(eventType, {
+      view: unsafeWindow,
+      bubbles: true,
+      cancelable: true
+    });
+    element.dispatchEvent(focusEvent);
+  });
 }
 
 function getEnergy() {
@@ -290,6 +294,11 @@ function getEnergy() {
     energyElement = document.querySelector('p._remainingEnergy_1kdi8_40');
     if (!energyElement) return null;
     const energy = parseInt(energyElement.textContent.split('from')[0], 10);
+    return isNaN(energy) ? null : energy;
+  } else if (window.location.host.includes('app.hipogang.io')) {
+    energyElement = $('span.font-medium')[0];
+    if (!energyElement) return null;
+    const energy = parseInt(energyElement.textContent.split(' / ')[0]);
     return isNaN(energy) ? null : energy;
   } else {
       const energyElement = $('p[data-v-f4e17ff6]')[0];
@@ -305,9 +314,10 @@ function getFrogElement() {
     } else if (window.location.host.includes('babydogeclikerbot.com')) {
         element = $('body').find('div[data-testid="tap_doge"]').find('img')[0];
     } else if (window.location.host.includes('raccooncoonbot.xyz')) {
-        element = document.querySelector('._clickerInnerCircle_13uoc_21');
+        element = document.querySelector('canvas');
+    } else if (window.location.host.includes('app.hipogang.io')) {
+      element = $('img[src="/assets/tap-DwglmcxY.png"]')[0].parentElement;
     }
-    console.log('Frog element:', element);
     return element;
 }
 
