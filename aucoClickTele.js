@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Auto Cick miniapp telegram Devhoanglv92
 // @namespace    http://tampermonkey.net/
-// @version      2024-12-27
-// @description  Hỗ trợ autoclick vào vùng giữa màn hình, vì nhiều miniapp khác nhau nhưng vùng nhấn là ở giữa nên tạm thời chỉ hỗ trợ ở giữa màn hình
+// @version      2025-1-14
+// @description  Hỗ trợ autoclick telegram miniapp, kucoin, babydogeclikerbot, pepememe
 // @author       devhoanglv92
 // @match        *://www.kucoin.com/*
 // @match        *://babydogeclikerbot.com/*
+// @match        *://game.raccooncoonbot.xyz/*
 // @icon         https://i.postimg.cc/brxR6L7c/128.png
 // @grant        GM_log
 // @grant        unsafeWindow
@@ -184,17 +185,18 @@ function detectInputSupport() {
     mouse: false
   };
 
-  const listTouch = ['babydogeclikerbot.com'];
+  const listTouch = ['babydogeclikerbot.com', 'raccooncoonbot.xyz'];
   // Check touch support
   support.touch = listTouch.filter((x) => window.location.host.includes(x)).length > 0;
 
   // Check pointer support
-  const listPointer = ['kucoin.com'];
+  const listPointer = ['kucoin.com', 'raccooncoonbot.xyz'];
   support.pointer = listPointer.filter((e) => window.location.host.includes(e)).length > 0;
 
   // Check mouse support
   support.mouse = 'onmousedown' in window;
 
+  console.log('Input support:', support);
   return support;
 }
 
@@ -238,15 +240,43 @@ function simulateClick(element) {
     }, 50);
   }
   if (support.mouse) {
-    const clickEvent = new MouseEvent('click', {
-      view: unsafeWindow,
-      bubbles: true,
-      cancelable: true,
-      clientX: x,
-      clientY: y
-    });
-    element.dispatchEvent(clickEvent);
-  }
+    try {
+        // Mouse down event
+        const mousedownEvent = new MouseEvent('mousedown', {
+            view: unsafeWindow,
+            bubbles: true,
+            cancelable: true,
+            clientX: x,
+            clientY: y
+        });
+        element.dispatchEvent(mousedownEvent);
+
+        // Simulate hold time (50-150ms)
+        setTimeout(() => {
+            // Mouse up event
+            const mouseupEvent = new MouseEvent('mouseup', {
+                view: unsafeWindow,
+                bubbles: true,
+                cancelable: true,
+                clientX: x,
+                clientY: y
+            });
+            element.dispatchEvent(mouseupEvent);
+
+            // Click event
+            const clickEvent = new MouseEvent('click', {
+                view: unsafeWindow,
+                bubbles: true,
+                cancelable: true,
+                clientX: x,
+                clientY: y
+            });
+            element.dispatchEvent(clickEvent);
+        }, Math.random() * 100 + 50); // Random delay between 50-150ms
+    } catch (error) {
+        console.error('Failed to create mouse events:', error);
+    }
+}
 }
 
 function getEnergy() {
@@ -256,8 +286,13 @@ function getEnergy() {
       if (!energyElement) return null;
       const energy = parseInt(energyElement.querySelector('span').textContent, 10);
       return isNaN(energy) ? null : energy;
+  } else if (window.location.host.includes('raccooncoonbot.xyz')) {
+    energyElement = document.querySelector('p._remainingEnergy_1kdi8_40');
+    if (!energyElement) return null;
+    const energy = parseInt(energyElement.textContent.split('from')[0], 10);
+    return isNaN(energy) ? null : energy;
   } else {
-      const energyElement = $('p[data-v-f0853464]')[0];
+      const energyElement = $('p[data-v-f4e17ff6]')[0];
       const energy = parseInt(energyElement.textContent.split('/')[0]);
       return isNaN(energy) ? null : energy;
   }
@@ -269,9 +304,11 @@ function getFrogElement() {
         element = $('body').find('g[clip-path="url(#__lottie_element_2)"]')[0];
     } else if (window.location.host.includes('babydogeclikerbot.com')) {
         element = $('body').find('div[data-testid="tap_doge"]').find('img')[0];
+    } else if (window.location.host.includes('raccooncoonbot.xyz')) {
+        element = document.querySelector('._clickerInnerCircle_13uoc_21');
     }
+    console.log('Frog element:', element);
     return element;
-  // return document.querySelector('#root > div.container--WYn0q > div:nth-child(2) > div.mainTouch--h_jfA > div:nth-child(2) > div.frogAnim--d8og4');
 }
 
 function startAutoClicker() {
