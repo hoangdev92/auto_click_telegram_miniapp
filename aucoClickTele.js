@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Auto Cick miniapp telegram Devhoanglv92
 // @namespace    http://tampermonkey.net/
-// @version      2025-1-15
+// @version      2025-1-16
 // @description  Hỗ trợ autoclick telegram miniapp, kucoin, babydogeclikerbot, pepememe
 // @author       devhoanglv92
 // @match        *://www.kucoin.com/*
@@ -135,10 +135,7 @@ resizeButton.addEventListener('click', () => {
 });
 
 toggleButton.addEventListener('click', function() {
-  isAutoClickerEnabled = !isAutoClickerEnabled;
-  toggleButton.textContent = isAutoClickerEnabled ? 'Tắt Autoclick' : 'Bật Autoclick';
-  toggleButton.style.backgroundColor = isAutoClickerEnabled ? '#f44336' : '#4CAF50';
-  isAutoClickerEnabled ? startAutoClicker() : stopAutoClicker();
+  handleStartOrStop(toggleButton)
 });
 
 speedSlider.addEventListener('input', function() {
@@ -178,6 +175,13 @@ settingsButton.addEventListener('mouseout', function() {
 
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function handleStartOrStop(toggleButton) {
+  isAutoClickerEnabled = !isAutoClickerEnabled;
+  toggleButton.textContent = isAutoClickerEnabled ? 'Tắt Autoclick' : 'Bật Autoclick';
+  toggleButton.style.backgroundColor = isAutoClickerEnabled ? '#f44336' : '#4CAF50';
+  isAutoClickerEnabled ? startAutoClicker() : stopAutoClicker();
 }
 
 function detectInputSupport() {
@@ -327,10 +331,103 @@ function getFrogElement() {
     return element;
 }
 
+function dragElementToTarget(bot, direction) {
+  const botRect = bot.getBoundingClientRect();
+  const targetRect = direction.getBoundingClientRect();
+
+  // Calculate start and end positions (center points)
+  const startX = botRect.left + (botRect.width / 2);
+  const startY = botRect.top + (botRect.height / 2);
+  const endX = targetRect.left + (targetRect.width / 2) + 20;
+  const endY = targetRect.top + (targetRect.height / 2) + 20;
+
+  let progress = 0;
+  const duration = 900; // ms - typical swipe duration
+  const startTime = performance.now();
+
+  // Initial touch
+  const touch = new Touch({
+    identifier: Date.now(),
+    target: bot,
+    clientX: startX,
+    clientY: startY,
+    pageX: startX,
+    pageY: startY
+  });
+
+  // Start touch
+  bot.dispatchEvent(new TouchEvent('touchstart', {
+    bubbles: true,
+    touches: [touch],
+    targetTouches: [touch],
+    changedTouches: [touch]
+  }));
+
+  const animate = (currentTime) => {
+    progress = (currentTime - startTime) / duration;
+    
+    if (progress >= 1) {
+      // End with slight overshoot
+      const finalTouch = new Touch({
+        identifier: touch.identifier,
+        target: bot,
+        clientX: endX,
+        clientY: endY,
+        pageX: endX,
+        pageY: endY
+      });
+
+      bot.dispatchEvent(new TouchEvent('touchend', {
+        bubbles: true,
+        touches: [],
+        targetTouches: [],
+        changedTouches: [finalTouch]
+      }));
+      return;
+    }
+
+    // Easing function for natural movement
+    const easing = t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    const easedProgress = easing(progress);
+
+    // Calculate current position
+    const currentX = startX + (endX - startX) * easedProgress;
+    const currentY = startY + (endY - startY) * easedProgress;
+
+    const moveTouch = new Touch({
+      identifier: touch.identifier,
+      target: bot,
+      clientX: currentX,
+      clientY: currentY,
+      pageX: currentX,
+      pageY: currentY
+    });
+
+    bot.dispatchEvent(new TouchEvent('touchmove', {
+      bubbles: true,
+      touches: [moveTouch],
+      targetTouches: [moveTouch],
+      changedTouches: [moveTouch]
+    }));
+
+    requestAnimationFrame(animate);
+  };
+
+  requestAnimationFrame(animate);
+}
+
 function startAutoClicker() {
   if (!isAutoClickerEnabled) return;
   const frogElement = getFrogElement();
   if (!frogElement) {
+    if ((window.location.host.includes('bumpstore.app'))) {
+      const divParent = document.querySelector('div.styled__InProgress-sc-1lbly2t-15');
+      const checkBot = document.querySelector('div.styled__Circle-sc-gmgdwx-2');
+      const checkBot2 = $('div[x="0"][y="0"]')[0];
+      const bot = checkBot || checkBot2;
+      let direction = document.querySelector('div.styled__EndCircle-sc-gmgdwx-3');
+      dragElementToTarget(bot, direction);
+    }
     setTimeout(startAutoClicker, 1000);
     return;
   }
