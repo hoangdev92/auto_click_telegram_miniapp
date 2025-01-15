@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Auto Cick miniapp telegram Devhoanglv92
 // @namespace    http://tampermonkey.net/
-// @version      2025-1-14.1
+// @version      2025-1-15
 // @description  Hỗ trợ autoclick telegram miniapp, kucoin, babydogeclikerbot, pepememe
 // @author       devhoanglv92
 // @match        *://www.kucoin.com/*
 // @match        *://babydogeclikerbot.com/*
 // @match        *://game.raccooncoonbot.xyz/*
 // @match        *://app.hipogang.io/*
+// @match        *://bumpstore.app/*
 // @icon         https://i.postimg.cc/brxR6L7c/128.png
 // @grant        GM_log
 // @grant        unsafeWindow
@@ -186,7 +187,7 @@ function detectInputSupport() {
     mouse: false
   };
 
-  const listTouch = ['babydogeclikerbot.com'];
+  const listTouch = ['babydogeclikerbot.com', 'bumpstore.app'];
   // Check touch support
   support.touch = listTouch.filter((x) => window.location.host.includes(x)).length > 0;
 
@@ -204,8 +205,8 @@ function simulateClick(element) {
   const rect = element.getBoundingClientRect();
   let x, y;
   if (window.location.host.includes('raccooncoonbot.xyz')) {
-    x = getRandomInt(rect.left - 10, rect.right - 10);
-    y = getRandomInt(rect.top, rect.bottom - 30)
+    x = getRandomInt(rect.left + 30, rect.right - 30);
+    y = getRandomInt(rect.top, rect.bottom - 50)
   } else {
     x = getRandomInt(rect.left, rect.right);
     y = getRandomInt(rect.top, rect.bottom);
@@ -284,6 +285,9 @@ function simulateClick(element) {
 }
 
 function getEnergy() {
+  if (window.location.host.includes('bumpstore.app')) {
+      return null;
+  }
   let energyElement;
   if (window.location.host.includes('kucoin.com')) {
       energyElement = document.querySelector('.process--mIfwx');
@@ -317,6 +321,8 @@ function getFrogElement() {
         element = document.querySelector('canvas');
     } else if (window.location.host.includes('app.hipogang.io')) {
       element = $('img[src="/assets/tap-DwglmcxY.png"]')[0].parentElement;
+    } else if (window.location.host.includes('bumpstore.app')) {
+        element = document.querySelector('svg.styled__Tap-sc-1lbly2t-14')
     }
     return element;
 }
@@ -329,7 +335,7 @@ function startAutoClicker() {
     return;
   }
   const energy = getEnergy();
-  if (energy === 0) {
+  if (energy && energy === 0) {
     const waitTime = getRandomInt(30000, 60000);
       Swal.fire({
                 title: 'thông báo!',
