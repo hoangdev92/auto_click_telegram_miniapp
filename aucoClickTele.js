@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Auto Cick miniapp telegram Devhoanglv92
 // @namespace    http://tampermonkey.net/
-// @version      2025-1-16
+// @version      2025-1-16/1
 // @description  Hỗ trợ autoclick telegram miniapp, kucoin, babydogeclikerbot, pepememe
 // @author       devhoanglv92
 // @match        *://www.kucoin.com/*
@@ -9,6 +9,7 @@
 // @match        *://game.raccooncoonbot.xyz/*
 // @match        *://app.hipogang.io/*
 // @match        *://bumpstore.app/*
+// @match        *://app.cexptap.com/*
 // @icon         https://i.postimg.cc/brxR6L7c/128.png
 // @grant        GM_log
 // @grant        unsafeWindow
@@ -20,7 +21,7 @@
 
 (function() {
   'use strict';
-
+// app.cexptap.com/
 let isRunning = false;
 let isAutoClickerEnabled = false;
 let clickSpeed = parseInt(localStorage.getItem('clickSpeed')) || 100;
@@ -191,7 +192,7 @@ function detectInputSupport() {
     mouse: false
   };
 
-  const listTouch = ['babydogeclikerbot.com', 'bumpstore.app'];
+  const listTouch = ['babydogeclikerbot.com', 'bumpstore.app', 'app.cexptap.com'];
   // Check touch support
   support.touch = listTouch.filter((x) => window.location.host.includes(x)).length > 0;
 
@@ -308,6 +309,11 @@ function getEnergy() {
     if (!energyElement) return null;
     const energy = parseInt(energyElement.textContent.split(' / ')[0]);
     return isNaN(energy) ? null : energy;
+  } else if (window.location.host.includes('app.cexptap.com')) {
+      energyElement = $('.Work_energy__viuKv')[0].querySelector('span')
+      if (!energyElement) return null;
+      const energy = parseInt(energyElement.textContent.split(' / ')[0]);
+      return isNaN(energy) ? null : energy;
   } else {
       const energyElement = $('p[data-v-f4e17ff6]')[0];
       const energy = parseInt(energyElement.textContent.split('/')[0]);
@@ -327,6 +333,8 @@ function getFrogElement() {
       element = $('img[src="/assets/tap-DwglmcxY.png"]')[0].parentElement;
     } else if (window.location.host.includes('bumpstore.app')) {
         element = document.querySelector('svg.styled__Tap-sc-1lbly2t-14')
+    } else if (window.location.host.includes('app.cexptap.com')) {
+        element = document.querySelector('div.Work_job__1fr9b')
     }
     return element;
 }
@@ -365,7 +373,7 @@ function dragElementToTarget(bot, direction) {
 
   const animate = (currentTime) => {
     progress = (currentTime - startTime) / duration;
-    
+
     if (progress >= 1) {
       // End with slight overshoot
       const finalTouch = new Touch({
